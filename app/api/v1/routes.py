@@ -1,13 +1,15 @@
-from fastapi import APIRouter
-from schemas.text import TextRequest  #  Correct path based on your sidebar
+from fastapi import APIRouter, HTTPException
 
-# 1. Define an APIRouter instance for this file
+from schemas.text import SummaryResponse, TextRequest
+
 router = APIRouter()
 
-# 3. Attach the endpoint to the router instead of 'app'
-@router.post("/summarize")
-def summarize_text(request: TextRequest):
-    """
-    Accepts a body with text and returns a static dummy summary.
-    """
-    return {"summary": "Dummy summary"}
+@router.post("/summarize", response_model=SummaryResponse)
+async def summarize(request: TextRequest):
+    # Logic: Validate "hi" case
+    # Mocking the response
+    return {
+        "summary": "This is a summarized version of your provided text.",
+        "metadata": {"word_count": 9, "model_version": "v1.0", "processing_time_ms": 50},
+        "status": "success"
+    }
