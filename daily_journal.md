@@ -113,6 +113,21 @@ Data / External APIs
 
 ---
 
+## 4. Why is `print()` Not Suitable for Production?
+
+**Short answer:** `print()` has no levels, no structure, and no control — it's fine for local debugging but breaks down in a real deployment.
+
+**Better, production-focused answer:**
+
+1. **No severity levels** — you can't distinguish an informational message from a warning or a critical error. `logger.info()` / `logger.error()` let you filter and prioritize; `print()` treats everything the same.
+2. **No structure/context** — a real logger (like the one in `app/core/logger.py`) automatically attaches a timestamp, logger name, and level to every line, which is essential for debugging issues after the fact. `print()` gives you just the raw text.
+3. **No control over output destination** — logs typically need to go to files, log aggregators, or monitoring systems (e.g., CloudWatch, Datadog), not just stdout. Loggers support handlers to route output anywhere; `print()` is stuck writing to stdout.
+4. **No way to turn it off/down** — you can't selectively silence `print()` statements in production without deleting code. With logging, you set the level (e.g., `INFO` vs `DEBUG`) and control verbosity without touching source.
+5. **Performance/buffering issues** — `print()` can block or behave unexpectedly under async/multi-process servers (like Uvicorn workers); logging libraries are built to handle concurrent/production environments safely.
+6. **Leaks raw output to users** — an uncaught exception with `print()`-style tracebacks can expose internal stack traces to API clients, which is a security/information-disclosure risk. Proper logging keeps that internal, while the API returns a clean error (see the `try/except` + `HTTPException` pattern in `app/api/v1/routes.py`).
+
+---
+
 ### Key Takeaways
 
 | Concept         | Purpose                                                        |
@@ -121,3 +136,4 @@ Data / External APIs
 | `GET`           | Fetch information via clean resource URLs                       |
 | `/health`       | Let load balancers / K8s detect unhealthy servers and reroute  |
 | Service Layer   | Hold business logic separately for clean, reusable, testable code |
+| Logging         | Structured, leveled, redirectable output — unlike `print()`   |
