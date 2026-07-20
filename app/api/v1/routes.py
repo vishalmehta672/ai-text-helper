@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 
 from app.core.logger import logger
-from schemas.text import SummaryResponse, TextRequest
-from services.service import TextSummarizer
+from app.schemas.text import SummaryResponse, TextRequest
+from app.services.service import TextSummarizer
 router = APIRouter()
 
 summarizer_service = TextSummarizer()
