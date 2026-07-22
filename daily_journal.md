@@ -128,6 +128,69 @@ Data / External APIs
 
 ---
 
+## 5. Unit Testing the Service Layer
+
+**Short answer:** Test the smallest piece of pure logic (the service) directly, so failures point to the *logic*, not to routing, validation, or serialization.
+
+**Better, production-focused answer:**
+
+We wrote the first tests against `TextSummarizer.summarize()` in `app/services/service.py`, **not** the route. This is the **testing pyramid** idea — lots of cheap, fast unit tests at the bottom, fewer expensive integration/route tests above.
+
+```
+        /\        few   → route / integration tests (HTTP, TestClient)
+       /  \
+      /____\      many  → unit tests (pure service logic)
+```
+
+### Why service first, not the route?
+1. **Fast** — no server spin-up, no `TestClient`, just a direct function call.
+2. **Clear blame** — if a unit test fails, the *summarization logic* broke, not routing or validation.
+3. **Fewer moving parts** — no fake HTTP request to build or mock.
+
+### The AAA pattern (structure of every test)
+```
+Arrange → build the input / object
+Act     → call the thing under test
+Assert  → verify the result
+```
+
+### What we tested
+| Case | Input | What it verifies |
+|------|-------|------------------|
+| returns text | any string | return type is `str` (contract check) |
+| normal paragraph | 25 words | truncates to exactly the first 20 words |
+| short text | 4 words | short input comes back unchanged (slicing past the end doesn't error) |
+
+### Testing correct *failure*, not just success
+Good code fails **predictably** on bad input. We use `with pytest.raises(...)` for this — it is itself an assertion ("this block **must** raise this error"), so no separate `assert` is needed inside it.
+
+```python
+with pytest.raises(ValueError):
+    summarizer.summarize("")     # empty string -> nothing to summarize
+```
+
+### `TypeError` vs `ValueError` (Python convention)
+- **`TypeError`** = wrong *type* (`None`, `123`, a list — not a `str` at all).
+- **`ValueError`** = right type, wrong *value* (`""` or whitespace-only string).
+
+This led us to add **input-validation guards** in the service (fail fast) so bad input raises a clean, intentional error instead of a confusing `AttributeError` deep inside `.split()`.
+
+```python
+if not isinstance(text, str):
+    raise TypeError(...)   # wrong type
+if not text.strip():
+    raise ValueError(...)  # empty / whitespace value
+```
+
+### How to run
+```bash
+source venv/bin/activate
+python -m pytest tests/test_summarizer.py -v
+```
+Use `python -m pytest` (not bare `pytest`) so the project root is on `sys.path` and `from app.services... import` resolves.
+
+---
+
 ### Key Takeaways
 
 | Concept         | Purpose                                                        |
