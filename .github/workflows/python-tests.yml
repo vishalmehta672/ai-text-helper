@@ -1,0 +1,32 @@
+name: Python Tests
+
+# WHEN should this workflow run?
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    # WHICH machine? A fresh Ubuntu VM provided by GitHub.
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Copy our repository code onto the runner machine.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Install the Python version we develop against.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Install our dependencies on this clean machine.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. Finally, run the test suite.
+      - name: Run tests
+        run: python -m pytest -v
